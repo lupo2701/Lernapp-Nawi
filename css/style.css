@@ -345,7 +345,7 @@ textarea:focus, input:focus { outline: 3px solid color-mix(in srgb, var(--c) 35%
 .step-n { width: 34px; height: 34px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font-weight: 900; flex: none; }
 
 .fig { margin: 18px 0; padding: 12px; background: #fffaf2; border: 1px solid var(--line); border-radius: 18px; cursor: zoom-in; }
-.fig-img svg { width: 100%; height: auto; display: block; max-height: 380px; }
+.fig-img svg { width: 100%; height: auto; display: block; max-height: 380px; max-width: 640px; margin: 0 auto; }
 .fig figcaption { font-size: .9rem; color: var(--ink-2); margin-top: 8px; }
 .fig .zoom { white-space: nowrap; font-weight: 800; color: var(--c); }
 .fig-big svg { width: 100%; height: auto; display: block; }
@@ -392,3 +392,14 @@ details.more[open] { padding-bottom: 16px; }
 .celebrate { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 75; display: flex; gap: 12px; align-items: center; text-decoration: none; background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.25); width: min(92vw, 420px); animation: up .3s ease; transition: opacity .4s, transform .4s; }
 .celebrate.out { opacity: 0; transform: translate(-50%, -20px); }
 .celebrate .c-icon { font-size: 2.2rem; animation: pop .6s ease; }
+
+/* Zucker */
+.label-pack { background: #fff; border: 2px solid #2b2733; border-radius: 10px; padding: 14px; line-height: 2.3; font-size: .95rem; }
+.ing { border: 1.5px solid var(--line); background: #faf5ec; border-radius: 8px; padding: 2px 8px; font-weight: 700; font-size: .95rem; }
+.ing.sel { border-color: var(--c); background: #fde7ef; }
+.ing.right { border-color: var(--good); background: #e8f6ee; }
+.ing.wrong { border-color: var(--bad); background: #fdecee; text-decoration: line-through; }
+.ing.missed { border: 2px dashed var(--warn); }
+.cubes { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; min-height: 14px; }
+.cubes i { width: 13px; height: 13px; border-radius: 3px; background: #fff; border: 1px solid #bfb3a3; box-shadow: inset -2px -2px 0 #efe7da; }
+.cubes i.real { background: #fdecee; border-color: #d1495b; }

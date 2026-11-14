@@ -75,7 +75,7 @@
   }
   const BADGES = [
     { id: "start", icon: "🍞", name: "Erster Bissen", desc: "Sammle deine ersten XP.", test: () => S.xp > 0 },
-    { id: "reader", icon: "📚", name: "Leseratte", desc: "Lies die Texte aller 7 Stationen.", test: () => TOPICS.every((t) => S.read[t.id]) },
+    { id: "reader", icon: "📚", name: "Leseratte", desc: "Lies die Texte aller Stationen.", test: () => TOPICS.every((t) => S.read[t.id]) },
     { id: "cards10", icon: "🃏", name: "Kartensammler", desc: "Erledige 10 Aufgabenkarten.", test: () => doneCount() >= 10 },
     { id: "cards25", icon: "🗂️", name: "Fleißige Biene", desc: "Erledige 25 Aufgabenkarten.", test: () => doneCount() >= 25 },
     { id: "cards40", icon: "👑", name: "Alle 40!", desc: "Erledige alle Aufgabenkarten.", test: () => doneCount() >= 40 },
@@ -83,9 +83,10 @@
     { id: "lab5", icon: "🔬", name: "Laborchef", desc: "Schließe 5 Experimente ab.", test: () => expCount() >= 5 },
     { id: "self", icon: "🧘", name: "Körperflüsterer", desc: "Notiere 5 Selbstbeobachtungen.", test: () => CARDS.filter((c) => c.type === "S" && S.cards[c.n]?.note?.trim()).length >= 5 },
     { id: "quiz100", icon: "💯", name: "Quiz-Ass", desc: "Schaffe ein Quiz mit 100 %.", test: () => Object.values(S.quiz).some((v) => v === 100) },
-    { id: "quizall", icon: "🏆", name: "Alleskönner", desc: "Mindestens 80 % in allen 7 Stations-Quizzen.", test: () => TOPICS.every((t) => (S.quiz[t.id] || 0) >= 80) },
+    { id: "quizall", icon: "🏆", name: "Alleskönner", desc: "Mindestens 80 % in allen Stations-Quizzen.", test: () => TOPICS.every((t) => (S.quiz[t.id] || 0) >= 80) },
     { id: "final", icon: "🎓", name: "Abschlussprüfung", desc: "Mindestens 80 % im großen Quiz.", test: () => (S.quiz.all || 0) >= 80 },
     { id: "blitz", icon: "⚡", name: "Blitzmerker", desc: "Schaffe 12 richtige Antworten in einer Blitzrunde.", test: () => (S.games.blitz || 0) >= 12 },
+    { id: "zucker", icon: "🔎", name: "Zucker-Detektiv", desc: "Finde alle versteckten Zucker in der Zutatenliste.", test: () => S.games.zucker === 100 },
     { id: "route", icon: "🧭", name: "Wegweiser", desc: "Bring den Weg der Nahrung fehlerfrei in Reihenfolge.", test: () => S.games.reihenfolge === 100 },
     { id: "organs", icon: "🏷️", name: "Organ-Kenner", desc: "Erkenne alle Organe ohne Fehler.", test: () => S.games.beschriften === 100 },
     { id: "syll", icon: "🧩", name: "Silbenkönig", desc: "Löse das Silbenrätsel.", test: () => S.games.silben === 100 },
@@ -260,7 +261,7 @@
         </div>
       </section>
       ${dailyCard()}
-      <h2>Deine 7 Stationen</h2>
+      <h2>Deine ${TOPICS.length} Stationen</h2>
       <div class="stations">${TOPICS.map(stationRow).join("")}</div>
       <div class="spacer"></div>
       <h2>Entdecke deinen Körper</h2>
@@ -347,7 +348,7 @@
   /* ---------- Lernen: Übersicht ---------- */
   route(/^\/themen$/, () => {
     app.innerHTML = `<h1>📖 Lernen</h1>
-      <p class="muted">Sieben Stationen – vom Mund bis zum Darmausgang. Jede Station: <b>lesen → merken → Quiz</b>. Aufgaben und Experimente gibt’s zum Vertiefen.</p>
+      <p class="muted">${TOPICS.length} Stationen – vom Mund bis zum Darmausgang, dazu das Extra-Thema Zucker. Jede Station: <b>lesen → merken → Quiz</b>. Aufgaben und Experimente gibt’s zum Vertiefen.</p>
       <div class="stations">${TOPICS.map(stationRow).join("")}</div>
       <div class="spacer"></div>
       <div class="grid grid-2">
@@ -418,7 +419,7 @@
         html += `<p>${rich(p)}</p>`;
         if (t.id === "weg" && i === 0) html += routeStrip();
         const lim = Math.min(paras.length - 1, 99);
-        figs.forEach((f, fi) => { if (Math.min(f.after, lim) === i) html += figureHTML(f, fi); });
+        figs.forEach((f, fi) => { const af = typeof f.after === "object" ? f.after[level] : f.after; if (Math.min(af, lim) === i) html += figureHTML(f, fi); });
       });
       if (t.id === "weg") html += bodyMapBlock();
       html += `<p class="small muted" style="margin:14px 0 0">Unterstrichene Wörter antippen = Erklärung aus dem Lexikon.</p>
@@ -543,7 +544,7 @@
       <h3>${esc(x.title)}</h3><p class="small muted" style="margin:0">${esc(x.intro)}</p></div></a>`;
   }
 
-  route(/^\/experiment\/(A\d+)$/, (id) => {
+  route(/^\/experiment\/([AZ]\d+)$/, (id) => {
     const x = EXPERIMENTS[id];
     if (!x) return home();
     const t = topicById(x.topic), st = expState(id);
@@ -696,6 +697,43 @@
       const score = () => { let ok = 0; FOODS.forEach((f, i) => { if (f.fiber === sel.has(i)) ok++; }); return Math.round((ok / FOODS.length) * 100); };
       const resultOK = () => score() === 100;
       const resultText = () => resultOK() ? "Perfekt! Alle ballaststoffreichen Lebensmittel gefunden. Sie stammen alle aus Pflanzen." : `${score()} % richtig. Grün = richtig, rot = enthält kaum Ballaststoffe, gestrichelt = übersehen. Tipp: Ballaststoffe gibt es nur in pflanzlichen Lebensmitteln – aber nicht in Saft oder Süßigkeiten.`;
+      draw();
+    },
+
+    zuckerdetektiv(el) {
+      const items = shuffle(SUGAR_NAMES);
+      const sel = new Set(); let checked = false;
+      const st = expState("Z1");
+      const draw = () => {
+        const ok = items.filter((x, i) => x.sugar === sel.has(i)).length;
+        el.innerHTML = `<h2>Zutatenliste</h2><p class="muted">Tippe alle Zutaten an, die <b>Zucker</b> sind.</p>
+          <div class="label-pack"><b>Zutaten:</b> ${items.map((x, i) => { let c = sel.has(i) ? "sel" : ""; if (checked) c = sel.has(i) ? (x.sugar ? "right" : "wrong") : (x.sugar ? "missed" : ""); return `<button class="ing ${c}" data-i="${i}" ${checked ? "disabled" : ""}>${esc(x.name)}</button>`; }).join(", ")}</div>
+          <div class="spacer"></div>
+          ${checked ? `<div class="feedback ${ok === items.length ? "ok" : "no"}">${ok === items.length ? "🔎 Perfekt! Alle versteckten Zucker entlarvt." : `${ok} von ${items.length} richtig. Grün = richtig erkannt, rot = kein Zucker, gestrichelt = übersehener Zucker.`}</div><div class="spacer"></div><button class="btn secondary small" id="zagain">Nochmal</button>` : `<button class="btn" id="zcheck" ${sel.size ? "" : "disabled"}>Prüfen</button>`}`;
+        $$("[data-i]", el).forEach((b) => b.addEventListener("click", () => { const i = +b.dataset.i; sel.has(i) ? sel.delete(i) : sel.add(i); draw(); }));
+        const c = $("#zcheck", el); if (c) c.addEventListener("click", () => { checked = true; const pct = Math.round((items.filter((x, i) => x.sugar === sel.has(i)).length / items.length) * 100); S.games.zucker = Math.max(S.games.zucker || 0, pct); save(); if (pct === 100) { award(30, "zucker:100", "Zucker-Detektiv"); confetti(); } else checkBadges(); draw(); });
+        const a = $("#zagain", el); if (a) a.addEventListener("click", () => { sel.clear(); checked = false; draw(); });
+      };
+      void st; draw();
+    },
+
+    wuerfel(el) {
+      const guess = {}, shown = {};
+      const cubeRow = (n, cls) => `<span class="cubes">${Array.from({ length: n }, () => `<i class="${cls}"></i>`).join("")}</span>`;
+      const draw = () => {
+        el.innerHTML = `<h2>Schätze!</h2><p class="muted">1 Würfel ≈ 3 g Zucker. Schieb den Regler und decke dann auf.</p>
+          ${SUGAR_PRODUCTS.map((p, i) => { const real = Math.round(p.g / 3), g = guess[i] ?? 5; return `<div class="box"><p style="margin:0 0 6px;font-weight:800">${p.icon} ${esc(p.name)}</p>
+            <div class="row"><input type="range" min="0" max="20" value="${g}" data-g="${i}" style="flex:1;accent-color:var(--c)" ${shown[i] ? "disabled" : ""}><b style="min-width:70px;text-align:right">${g} Würfel</b></div>
+            ${cubeRow(g, "guess")}
+            ${shown[i] ? `<p class="small" style="margin:.4em 0 0">${Math.abs(g - real) <= 2 ? "✅ Gut geschätzt!" : g < real ? "😮 Mehr als gedacht!" : "🙂 Weniger als gedacht."} Tatsächlich ca. <b>${p.g} g = ${real} Würfel</b>.</p>${cubeRow(real, "real")}` : `<button class="btn small secondary" data-s="${i}" style="margin-top:8px">Aufdecken</button>`}</div>`; }).join("")}
+          ${Object.keys(shown).length === SUGAR_PRODUCTS.length ? `<div class="feedback ok">Fertig! Zur Erinnerung: Die WHO empfiehlt höchstens <b>16 Würfel</b> pro Tag, besser 8.</div>` : ""}`;
+        $$("[data-g]", el).forEach((r) => r.addEventListener("input", () => { guess[r.dataset.g] = +r.value; const row = r.closest(".box"); row.querySelector("b").textContent = r.value + " Würfel"; row.querySelector(".cubes").outerHTML = cubeRow(+r.value, "guess"); }));
+        $$("[data-s]", el).forEach((b) => b.addEventListener("click", () => {
+          const i = +b.dataset.s; shown[i] = true; if (guess[i] === undefined) guess[i] = 5;
+          if (Object.keys(shown).length === SUGAR_PRODUCTS.length) { const good = SUGAR_PRODUCTS.filter((p, k) => Math.abs((guess[k] ?? 5) - Math.round(p.g / 3)) <= 2).length; award(good * 4, "wuerfel:" + good, "Gut geschätzt"); }
+          draw();
+        }));
+      };
       draw();
     },
 
@@ -906,7 +944,9 @@
     { id: "A13", icon: "🍩", title: "Hunger oder Appetit?", desc: "Vier Geschichten – warum essen die Personen?", exp: true },
     { id: "A12", icon: "🥦", title: "Ballaststoff-Detektiv", desc: "Finde die ballaststoffreichen Lebensmittel.", exp: true },
     { id: "A14", icon: "👀", title: "Wie gut kannst du schätzen?", desc: "Optische Täuschungen rund ums Essen.", exp: true },
-    { id: "A6", icon: "😮", title: "Schluck-Modell", desc: "Warum kann man beim Schlucken nicht atmen?", exp: true }
+    { id: "A6", icon: "😮", title: "Schluck-Modell", desc: "Warum kann man beim Schlucken nicht atmen?", exp: true },
+    { id: "Z1", icon: "🔎", title: "Zucker-Detektiv", desc: "Finde die versteckten Zucker in der Zutatenliste.", exp: true },
+    { id: "Z2", icon: "🧊", title: "Wie viele Würfel?", desc: "Schätze den Zucker in Cola, Ketchup & Co.", exp: true }
   ];
   route(/^\/spiel\/([a-z]+)$/, (id) => {
     const g = GAMES.find((x) => x.id === id);

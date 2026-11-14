@@ -10,17 +10,17 @@ Die App läuft komplett im Browser, auch auf dem Handy. Sie braucht keine Anmeld
 | Bereich | Was drin ist |
 |---|---|
 | 🏠 **Start** | Level & Serie, „Weiterlernen“, Schnell-Quiz, Tages-Challenge, interaktive Körperkarte |
-| 📖 **Lernen** | 7 Stationen, jede als Lernpfad: **① Lesen** (Basis/Profi, mit beschrifteten Abbildungen) → **② Merke dir** → **③ Teste dich** (Quiz) → **④ Vertiefen** (Aufgabenkarten mit Tipps & Lösungsideen, Experimente, Lernziele) |
+| 📖 **Lernen** | 8 Stationen, jede als Lernpfad: **① Lesen** (Basis/Profi, mit beschrifteten Abbildungen) → **② Merke dir** → **③ Teste dich** (Quiz) → **④ Vertiefen** (Aufgabenkarten mit Tipps & Lösungsideen, Experimente, Lernziele) |
 | ❓ **Quiz** | Schnell-Quiz, Blitzrunde (60 Sek. Richtig/Falsch), Tages-Challenge, Abschlussquiz, Quiz pro Station, Spiele (Reihenfolge, Organe beschriften, Silbenrätsel, Ballaststoff-Detektiv, Hunger oder Appetit, Schätzen, Schluck-Modell) |
 | 🙂 **Ich** | Level, Abzeichen, Mein Heft (alle Notizen, druckbar), Lexikon, eigene Experimente |
 
-Stationen: Weg der Nahrung · Mund & Speiseröhre · Magen · Dünndarm · Gallenblase & Bauchspeicheldrüse · Dickdarm · Hunger & Sättigung.
-Fragenpool: 87 Fragen (48 Multiple Choice + 39 Richtig/Falsch). 40 Aufgabenkarten, Experimente A5–A14, 36 Lexikonbegriffe.
+Stationen: Weg der Nahrung · Mund & Speiseröhre · Magen · Dünndarm · Gallenblase & Bauchspeicheldrüse · Dickdarm · Hunger & Sättigung · **Zucker** (Zuckerarten, freier Zucker & WHO-Empfehlung, Insulin & Insulinresistenz, versteckter Zucker, Belohnungssystem & „Zuckersucht“ – mit Zucker-Detektiv und Würfelzucker-Schätzspiel).
+Fragenpool: 107 Fragen (60 Multiple Choice + 47 Richtig/Falsch). 47 Aufgabenkarten, Experimente A5–A14 und Z1–Z2, 43 Lexikonbegriffe.
 
 ## Gamification
 
 - **XP & 9 Level** (vom „Krümel“ bis zum „Professor Pepsin“)
-- **22 Abzeichen**, **Serien-Bonus** im Quiz (3, 5, 10 richtige in Folge)
+- **23 Abzeichen**, **Serien-Bonus** im Quiz (3, 5, 10 richtige in Folge)
 - **Blitzrunde** mit Rekord, **Tages-Challenge**, **Lern-Serie** 🔥 (Tage in Folge)
 
 ## Online stellen mit GitHub Pages
@@ -44,6 +44,7 @@ index.html        Grundgerüst
 css/style.css     Gestaltung
 js/data.js        Alle Inhalte (Texte, Karten, Experimente, Quiz, Lexikon) – hier lässt sich alles anpassen
 js/figures.js     Beschriftete Abbildungen (SVG)
+js/zucker.js      Station 8 „Zucker“ (Texte, Abbildungen, Quiz, Karten, Spiele)
 js/app.js         App-Logik, Spiele, Gamification
 ```
 
