@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Der Weg der Nahrung – Lern-App</title>
+  <meta name="description" content="Interaktive Lern-App zur Verdauung für die Sekundarstufe I: Lerntexte, Aufgabenkarten, Experimente, Quiz und Lexikon.">
+  <meta name="theme-color" content="#fbf6ef">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍎</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="brand" aria-label="Startseite">
+      <span class="brand-mark" aria-hidden="true">🍎</span>
+      <span class="brand-text">Der Weg der Nahrung</span>
+    </a>
+    <a href="#/erfolge" class="xpbar" id="xpbar" aria-label="Level und Erfolge"></a>
+    <nav class="topnav" aria-label="Hauptnavigation">
+      <a href="#/" data-nav="home">Start</a>
+      <a href="#/themen" data-nav="themen">Lernen</a>
+      <a href="#/karten" data-nav="karten">Aufgaben</a>
+      <a href="#/spiele" data-nav="spiele">Üben</a>
+      <a href="#/lexikon" data-nav="lexikon">Lexikon</a>
+      <a href="#/heft" data-nav="heft">Mein Heft</a>
+      <a href="#/erfolge" data-nav="erfolge">Erfolge</a>
+    </nav>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <nav class="bottomnav" aria-label="Navigation">
+    <a href="#/" data-nav="home"><span aria-hidden="true">🏠</span>Start</a>
+    <a href="#/themen" data-nav="themen"><span aria-hidden="true">📖</span>Lernen</a>
+    <a href="#/karten" data-nav="karten"><span aria-hidden="true">🃏</span>Aufgaben</a>
+    <a href="#/spiele" data-nav="spiele"><span aria-hidden="true">🎯</span>Üben</a>
+    <a href="#/lexikon" data-nav="lexikon"><span aria-hidden="true">🔎</span>Lexikon</a>
+  </nav>
+
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <button class="sheet-x" data-close aria-label="Schließen">✕</button>
+      <div id="sheet-body"></div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
