@@ -5,25 +5,23 @@ Die Inhalte orientieren sich an der Materialsammlung „Der Weg der Nahrung“ (
 
 Die App läuft komplett im Browser, auch auf dem Handy. Sie braucht keine Anmeldung und keinen Server. Der Fortschritt wird nur lokal auf dem Gerät gespeichert.
 
-## Inhalte
+## Aufbau für Schüler: 4 Bereiche
 
 | Bereich | Was drin ist |
 |---|---|
-| 🧭 **Körperkarte** | Interaktive Grafik: Organ antippen → Erklärung |
-| 📖 **7 Lernstationen** | Weg der Nahrung · Mund & Speiseröhre · Magen · Dünndarm · Gallenblase & Bauchspeicheldrüse · Dickdarm · Hunger & Sättigung – jeweils in **Basis** und **Profi**, mit „Gut zu wissen“ und Lernzielen zum Abhaken |
-| 🃏 **40 Aufgabenkarten** | Recherche, Experiment, Selbstbeobachtung – zum Umdrehen (Tipp/Zusatzaufgabe), mit Notizfeld und Lösungsideen |
-| 🧪 **Experimente** | A5–A14 Schritt für Schritt: Vermutung, Durchführung, Beobachtung, Erklärung; eigenes Experiment-Protokoll (A1/A2) |
-| 🎮 **Interaktiv** | Schluck-Modell (A6), Ballaststoff-Detektiv (A12), Hunger oder Appetit (A13), Optische Täuschungen (A14) |
-| 🎯 **Üben** | Weg der Nahrung sortieren, Organe beschriften, Silbenrätsel, Quiz pro Station, großes Abschlussquiz (48 Fragen im Pool) |
-| 📚 **Lexikon** | 36 Fachbegriffe, im Text antippbar |
-| 📒 **Mein Heft** | Alle eigenen Antworten gesammelt – druckbar bzw. als PDF speicherbar |
+| 🏠 **Start** | Level & Serie, „Weiterlernen“, Schnell-Quiz, Tages-Challenge, interaktive Körperkarte |
+| 📖 **Lernen** | 7 Stationen, jede als Lernpfad: **① Lesen** (Basis/Profi, mit beschrifteten Abbildungen) → **② Merke dir** → **③ Teste dich** (Quiz) → **④ Vertiefen** (Aufgabenkarten mit Tipps & Lösungsideen, Experimente, Lernziele) |
+| ❓ **Quiz** | Schnell-Quiz, Blitzrunde (60 Sek. Richtig/Falsch), Tages-Challenge, Abschlussquiz, Quiz pro Station, Spiele (Reihenfolge, Organe beschriften, Silbenrätsel, Ballaststoff-Detektiv, Hunger oder Appetit, Schätzen, Schluck-Modell) |
+| 🙂 **Ich** | Level, Abzeichen, Mein Heft (alle Notizen, druckbar), Lexikon, eigene Experimente |
+
+Stationen: Weg der Nahrung · Mund & Speiseröhre · Magen · Dünndarm · Gallenblase & Bauchspeicheldrüse · Dickdarm · Hunger & Sättigung.
+Fragenpool: 87 Fragen (48 Multiple Choice + 39 Richtig/Falsch). 40 Aufgabenkarten, Experimente A5–A14, 36 Lexikonbegriffe.
 
 ## Gamification
 
 - **XP & 9 Level** (vom „Krümel“ bis zum „Professor Pepsin“)
-- **21 Abzeichen** (z. B. Leseratte, Laborchef, Quiz-Ass, Wochen-Serie)
-- **Tages-Challenge**: jeden Tag 5 neue Fragen
-- **Lern-Serie** 🔥 (Tage in Folge), Konfetti und Level-Ups
+- **22 Abzeichen**, **Serien-Bonus** im Quiz (3, 5, 10 richtige in Folge)
+- **Blitzrunde** mit Rekord, **Tages-Challenge**, **Lern-Serie** 🔥 (Tage in Folge)
 
 ## Online stellen mit GitHub Pages
 
@@ -45,6 +43,7 @@ Einfach `index.html` im Browser öffnen – oder im Ordner `python3 -m http.serv
 index.html        Grundgerüst
 css/style.css     Gestaltung
 js/data.js        Alle Inhalte (Texte, Karten, Experimente, Quiz, Lexikon) – hier lässt sich alles anpassen
+js/figures.js     Beschriftete Abbildungen (SVG)
 js/app.js         App-Logik, Spiele, Gamification
 ```
 

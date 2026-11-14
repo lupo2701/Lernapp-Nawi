@@ -85,6 +85,7 @@
     { id: "quiz100", icon: "💯", name: "Quiz-Ass", desc: "Schaffe ein Quiz mit 100 %.", test: () => Object.values(S.quiz).some((v) => v === 100) },
     { id: "quizall", icon: "🏆", name: "Alleskönner", desc: "Mindestens 80 % in allen 7 Stations-Quizzen.", test: () => TOPICS.every((t) => (S.quiz[t.id] || 0) >= 80) },
     { id: "final", icon: "🎓", name: "Abschlussprüfung", desc: "Mindestens 80 % im großen Quiz.", test: () => (S.quiz.all || 0) >= 80 },
+    { id: "blitz", icon: "⚡", name: "Blitzmerker", desc: "Schaffe 12 richtige Antworten in einer Blitzrunde.", test: () => (S.games.blitz || 0) >= 12 },
     { id: "route", icon: "🧭", name: "Wegweiser", desc: "Bring den Weg der Nahrung fehlerfrei in Reihenfolge.", test: () => S.games.reihenfolge === 100 },
     { id: "organs", icon: "🏷️", name: "Organ-Kenner", desc: "Erkenne alle Organe ohne Fehler.", test: () => S.games.beschriften === 100 },
     { id: "syll", icon: "🧩", name: "Silbenkönig", desc: "Löse das Silbenrätsel.", test: () => S.games.silben === 100 },
@@ -119,7 +120,7 @@
     S.badges = S.badges || {};
     const fresh = BADGES.filter((b) => !S.badges[b.id] && b.test());
     fresh.forEach((b) => { S.badges[b.id] = today(); });
-    if (fresh.length) { save(); updateXPBar(); setTimeout(() => celebrate(fresh[0].icon, "Neues Abzeichen!", `<b>${esc(fresh[0].name)}</b><br>${esc(fresh[0].desc)}${fresh.length > 1 ? `<br><span class="small muted">+ ${fresh.length - 1} weitere</span>` : ""}`), 900); }
+    if (fresh.length) { save(); updateXPBar(); setTimeout(() => celebrate(fresh[0].icon, "Neues Abzeichen!", `${esc(fresh[0].name)} – ${esc(fresh[0].desc)}${fresh.length > 1 ? `<br>+ ${fresh.length - 1} weitere` : ""}`), 900); }
   }
   function floatXP(text) {
     const el = document.createElement("div"); el.className = "xp-float"; el.textContent = text;
@@ -127,8 +128,12 @@
   }
   function celebrate(icon, title, html) {
     confetti();
-    if (!sheet.hidden) return toast(`${icon} ${title}`);
-    openSheet(`<div style="text-align:center"><div class="celebrate-icon">${icon}</div><h2 id="sheet-title">${title}</h2><p>${html}</p><div class="row" style="justify-content:center"><button class="btn" data-close>Weiter</button><a class="btn secondary" href="#/erfolge" data-close>Alle Erfolge</a></div></div>`);
+    const el = document.createElement("a");
+    el.className = "celebrate"; el.href = "#/ich";
+    el.innerHTML = `<span class="c-icon">${icon}</span><span><b>${title}</b><br><span class="small">${html}</span></span>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add("out"), 3600);
+    setTimeout(() => el.remove(), 4100);
   }
   function confetti() {
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -219,7 +224,7 @@
     }
     if (!handled) home();
     const section = hash.split("/")[1] || "home";
-    const map = { erfolge: "erfolge", challenge: "home", "": "home", thema: "themen", themen: "themen", karten: "karten", experiment: "themen", protokoll: "heft", spiele: "spiele", spiel: "spiele", quiz: "spiele", lexikon: "lexikon", heft: "heft" };
+    const map = { "": "home", challenge: "quiz", quiz: "quiz", spiele: "quiz", spiel: "quiz", blitz: "quiz", thema: "lernen", themen: "lernen", karten: "lernen", experiment: "lernen", lexikon: "lernen", ich: "ich", erfolge: "ich", heft: "ich", protokoll: "ich" };
     const navKey = map[section] || "home";
     $$("[data-nav]").forEach((a) => a.classList.toggle("active", a.dataset.nav === navKey));
     window.scrollTo(0, 0);
@@ -230,49 +235,38 @@
   const footer = `<p class="footer">Inhalte nach der Materialsammlung „Der Weg der Nahrung“ (BZfE/BLE) – für die App neu aufbereitet. Dein Fortschritt wird nur auf diesem Gerät gespeichert.</p>`;
 
   /* ---------- Startseite ---------- */
+  const nextTopic = () => TOPICS.find((t) => topicProgress(t) < 100) || TOPICS[0];
+  function stationRow(t, i) {
+    const p = topicProgress(t);
+    return `<a class="station" href="#/thema/${t.id}" style="--c:${t.color}">
+      <span class="s-num">${p === 100 ? "✓" : i + 1}</span><span class="s-icon" aria-hidden="true">${t.icon}</span>
+      <span class="s-main"><b>${esc(t.title)}</b><span class="progress"><i style="width:${p}%"></i></span></span>
+      <span class="s-pct">${p}%</span></a>`;
+  }
+  function bodyMapBlock() {
+    return `<div class="bodymap" id="bodymap"><div class="hint">👆 Tippe auf ein Organ</div>${bodySVG()}
+      <div class="organ-info" id="organ-info"><p class="muted" style="margin:0">Die Nahrung wandert durch <b>Mund → Speiseröhre → Magen → Dünndarm → Dickdarm → Mastdarm</b>. Leber, Gallenblase und Bauchspeicheldrüse helfen mit ihren Säften.</p></div></div>`;
+  }
   function home() {
-    const doneCards = Object.values(S.cards).filter((c) => c.done).length;
-    const quizVals = TOPICS.map((t) => S.quiz[t.id] || 0);
-    const avgQuiz = Math.round(quizVals.reduce((a, b) => a + b, 0) / quizVals.length);
-    const total = Math.round(TOPICS.map(topicProgress).reduce((a, b) => a + b, 0) / TOPICS.length);
+    const nt = nextTopic();
     app.innerHTML = `
-      <section class="hero">
-        <div>
-          <h1>Was passiert mit deinem <span>Pausenbrot</span>?</h1>
-          <p class="hero-lead">Folge der Nahrung vom Mund bis zum Darmausgang. Lies kurze Texte, löse Aufgabenkarten, mach Experimente und teste dein Wissen im Quiz.</p>
-          <div class="stats">
-            <div class="stat"><b>${total}%</b><span>Gesamtfortschritt</span></div>
-            <div class="stat"><b>${doneCards}/40</b><span>Aufgaben erledigt</span></div>
-            <div class="stat"><b>${avgQuiz}%</b><span>Ø Quiz-Bestwert</span></div>
-          </div>
-          ${levelCard()}
-          <div class="row">
-            <a class="btn" href="#/thema/weg">Los geht’s →</a>
-            <a class="btn secondary" href="#/spiel/reihenfolge">Schnell-Check</a>
-          </div>
-        </div>
-        <div class="bodymap" id="bodymap">
-          <div class="hint">👆 Tippe auf ein Organ</div>
-          ${bodySVG()}
-          <div class="organ-info" id="organ-info"><p class="muted" style="margin:0">Die Nahrung wandert durch <b>Mund → Speiseröhre → Magen → Dünndarm → Dickdarm → Mastdarm</b>. Leber, Gallenblase und Bauchspeicheldrüse helfen mit ihren Säften.</p></div>
+      <section class="hello">
+        <h1>Was passiert mit deinem <span>Pausenbrot</span>?</h1>
+        <p class="hero-lead">Begleite die Nahrung auf ihrer Reise durch deinen Körper – lesen, verstehen, Quiz durchklicken.</p>
+        ${levelCard()}
+        <div class="bigbtns">
+          <a class="bigbtn" href="#/thema/${nt.id}" style="--c:${nt.color}"><span class="bi" aria-hidden="true">📖</span><span><small>Weiterlernen</small><b>${nt.icon} ${esc(nt.title)}</b></span></a>
+          <a class="bigbtn" href="#/quiz/schnell" style="--c:#3d8bbd"><span class="bi" aria-hidden="true">❓</span><span><small>Schnell-Quiz</small><b>10 Fragen durchklicken</b></span></a>
         </div>
       </section>
       ${dailyCard()}
-      <h2>Deine Lernstationen</h2>
-      <div class="grid grid-3">${TOPICS.map(topicTile).join("")}</div>
+      <h2>Deine 7 Stationen</h2>
+      <div class="stations">${TOPICS.map(stationRow).join("")}</div>
+      <div class="spacer"></div>
+      <h2>Entdecke deinen Körper</h2>
+      ${bodyMapBlock()}
       ${footer}`;
-    $$(".topic-tile").forEach((el) => setColor(el, el.dataset.color));
     bindBodyMap($("#bodymap"));
-  }
-
-  function topicTile(t) {
-    const p = topicProgress(t);
-    return `<a class="card topic-tile" href="#/thema/${t.id}" data-color="${t.color}">
-      <div class="icon" aria-hidden="true">${t.icon}</div>
-      <h3>${esc(t.title)}</h3>
-      <p class="small muted" style="margin:0">${t.cards.length} Aufgaben · ${t.experiments.length} ${t.experiments.length === 1 ? "Experiment" : "Experimente"}</p>
-      <div class="progress" aria-label="Fortschritt ${p}%"><i style="width:${p}%"></i></div>
-    </a>`;
   }
 
   function bindBodyMap(root) {
@@ -293,7 +287,7 @@
 
   function levelCard() {
     const L = levelInfo(S.xp || 0), nb = Object.keys(S.badges || {}).length, s = streak();
-    return `<a class="card levelcard" href="#/erfolge">
+    return `<a class="card levelcard" href="#/ich">
       <div class="lvl-icon">${L.icon}</div>
       <div style="flex:1;min-width:0"><p class="small muted" style="margin:0;font-weight:800">Level ${L.n} · ${S.xp || 0} XP${L.to ? ` · noch ${L.to - (S.xp || 0)} bis Level ${L.n + 1}` : ""}</p>
         <h3 style="margin:2px 0 8px">${esc(L.name)}</h3><div class="progress xp"><i style="width:${L.pct}%"></i></div></div>
@@ -324,108 +318,134 @@
     });
   });
 
-  route(/^\/erfolge$/, () => {
+  function ichPage() {
     const L = levelInfo(S.xp || 0);
-    app.innerHTML = `<h1>🏅 Meine Erfolge</h1>
+    app.innerHTML = `<h1>🙂 Ich</h1>
       ${levelCard()}
+      <div class="grid grid-3">
+        <a class="card game-tile" href="#/heft"><span class="icon">📒</span><div><h3>Mein Heft</h3><p class="small muted" style="margin:0">Alle deine Antworten &amp; Notizen</p></div></a>
+        <a class="card game-tile" href="#/lexikon"><span class="icon">📚</span><div><h3>Lexikon</h3><p class="small muted" style="margin:0">Fachbegriffe nachschlagen</p></div></a>
+        <a class="card game-tile" href="#/protokoll"><span class="icon">📝</span><div><h3>Eigene Experimente</h3><p class="small muted" style="margin:0">Planen &amp; protokollieren</p></div></a>
+      </div>
       <div class="spacer"></div>
-      <div class="row no-print"><a class="btn secondary small" href="#/heft">📒 Mein Heft</a><a class="btn secondary small" href="#/challenge">📅 Tages-Challenge</a></div>
+      <h2>Abzeichen <span class="chip">${Object.keys(S.badges || {}).length}/${BADGES.length}</span></h2>
+      <div class="badges">${BADGES.map((b) => { const got = (S.badges || {})[b.id]; return `<div class="badge ${got ? "got" : ""}" title="${esc(b.desc)}"><div class="b-icon">${got ? b.icon : "🔒"}</div><b>${esc(b.name)}</b><span class="small muted">${esc(b.desc)}</span></div>`; }).join("")}</div>
       <div class="spacer"></div>
-      <h2>Abzeichen (${Object.keys(S.badges || {}).length}/${BADGES.length})</h2>
-      <div class="badges">${BADGES.map((b) => { const got = (S.badges || {})[b.id]; return `<div class="badge ${got ? "got" : ""}"><div class="b-icon">${got ? b.icon : "🔒"}</div><b>${esc(b.name)}</b><span class="small muted">${esc(b.desc)}</span>${got ? `<span class="chip done">✓ ${new Date(got).toLocaleDateString("de-DE")}</span>` : ""}</div>`; }).join("")}</div>
-      <div class="spacer"></div>
-      <h2>Level-Leiter</h2>
-      <div class="ladder">${LEVELS.map(([xp, name, icon], i) => `<div class="rung ${i + 1 <= L.n ? "got" : ""} ${i + 1 === L.n ? "now" : ""}"><span class="r-icon">${icon}</span><span><b>Level ${i + 1}: ${esc(name)}</b><br><span class="small muted">ab ${xp} XP</span></span></div>`).join("")}</div>
-      <div class="spacer"></div>
-      <div class="card"><h3>So sammelst du XP</h3><ul class="small" style="margin:0;padding-left:20px">
-        <li>Lerntext gelesen: 20 XP · Lernziel abgehakt: 5 XP</li>
-        <li>Aufgabenkarte erledigt: 15 XP (Profi 20) · mit ausführlicher Notiz: +5 XP</li>
-        <li>Experiment abgeschlossen: 30 XP (Profi 40)</li>
-        <li>Quiz: 2 XP pro richtige Antwort, Quiz geschafft +15, 100 % +30 (großes Quiz +60)</li>
-        <li>Spiele fehlerfrei: 25–30 XP · Tages-Challenge: 40 XP · Lexikon-Begriff nachgeschlagen: 2 XP</li></ul></div>
+      <details class="more"><summary>🪜 Level-Leiter</summary>
+        <div class="ladder" style="margin-top:10px">${LEVELS.map(([xp, name, icon], i) => `<div class="rung ${i + 1 <= L.n ? "got" : ""} ${i + 1 === L.n ? "now" : ""}"><span class="r-icon">${icon}</span><span><b>Level ${i + 1}: ${esc(name)}</b><br><span class="small muted">ab ${xp} XP</span></span></div>`).join("")}</div></details>
+      <details class="more"><summary>⭐ So sammelst du XP</summary><ul class="small" style="margin:10px 0 0;padding-left:20px">
+        <li>Text gelesen: 20 XP · Lernziel abgehakt: 5 XP</li>
+        <li>Quiz: 2 XP pro richtige Antwort, Serien-Bonus ab 3 in Folge, Quiz geschafft +15, 100 % +30</li>
+        <li>Blitzrunde: 1 XP pro richtige Antwort · Tages-Challenge: 40 XP</li>
+        <li>Aufgabenkarte: 15 XP (Profi 20) · Experiment: 30 XP (Profi 40)</li>
+        <li>Spiele fehlerfrei: 25–30 XP · Lexikon-Begriff: 2 XP</li></ul></details>
       ${footer}`;
-  });
+  }
+  route(/^\/ich$/, ichPage);
+  route(/^\/erfolge$/, ichPage);
 
-  /* ---------- Themenübersicht ---------- */
+  /* ---------- Lernen: Übersicht ---------- */
   route(/^\/themen$/, () => {
-    app.innerHTML = `<h1>Lernstationen</h1>
-      <p class="muted">Arbeite die Stationen der Reihe nach durch – oder starte mit dem Organ, das dich am meisten interessiert.</p>
-      <div class="grid grid-3">${TOPICS.map(topicTile).join("")}</div>
+    app.innerHTML = `<h1>📖 Lernen</h1>
+      <p class="muted">Sieben Stationen – vom Mund bis zum Darmausgang. Jede Station: <b>lesen → merken → Quiz</b>. Aufgaben und Experimente gibt’s zum Vertiefen.</p>
+      <div class="stations">${TOPICS.map(stationRow).join("")}</div>
       <div class="spacer"></div>
-      <div class="card"><h3>🧪 Eigenes Experiment planen</h3><p class="muted">Du hast eine eigene Forschungsfrage? Mit dem Planungsbogen und Protokoll hältst du alles fest.</p><a class="btn secondary" href="#/protokoll">Zum Protokoll</a></div>
+      <div class="grid grid-2">
+        <a class="card game-tile" href="#/lexikon"><span class="icon">📚</span><div><h3>Lexikon</h3><p class="small muted" style="margin:0">Alle Fachbegriffe kurz erklärt</p></div></a>
+        <a class="card game-tile" href="#/karten"><span class="icon">🃏</span><div><h3>Alle Aufgabenkarten</h3><p class="small muted" style="margin:0">40 Karten zum Recherchieren, Experimentieren und Beobachten</p></div></a>
+      </div>
       ${footer}`;
-    $$(".topic-tile").forEach((el) => setColor(el, el.dataset.color));
   });
 
-  /* ---------- Themenseite ---------- */
+  /* ---------- Station (Lernpfad) ---------- */
+  function figureHTML(f, i) {
+    return `<figure class="fig" data-fig="${i}"><div class="fig-img">${f.svg}</div><figcaption>${esc(f.caption)} <span class="zoom">🔍 Vergrößern</span></figcaption></figure>`;
+  }
+  function routeStrip() {
+    return `<div class="routestrip">${ROUTE_STRIP.map((r, i) => `<div class="rs" style="--c:${ORGAN_COLORS[r.o]}"><span class="rs-n">${i + 1}</span><b>${esc(ORGANS[r.o].name)}</b><span>${esc(r.verb)}</span></div>`).join("")}</div>`;
+  }
   route(/^\/thema\/([a-z]+)(?:\/([a-z]+))?$/, (id, tab) => {
     const t = topicById(id);
     if (!t) return home();
-    tab = tab || "lernen";
     const idx = TOPICS.indexOf(t);
     const prev = TOPICS[idx - 1], next = TOPICS[idx + 1];
+    const goals = S.goals[t.id] || [];
+    const nDone = t.cards.filter((n) => S.cards[n]?.done).length;
     app.innerHTML = `
       <a class="back" href="#/themen">← Alle Stationen</a>
       <div class="topic-head">
         <div class="icon" aria-hidden="true">${t.icon}</div>
         <p class="small" style="margin:0;opacity:.85;font-weight:800">Station ${idx + 1} von ${TOPICS.length}</p>
         <h1>${esc(t.title)}</h1>
-        <p style="margin:0;opacity:.92">Fortschritt: <b>${topicProgress(t)}%</b></p>
+        <div class="progress" style="background:rgba(255,255,255,.3);max-width:320px"><i style="width:${topicProgress(t)}%;background:#fff"></i></div>
       </div>
-      <div class="tabs" role="tablist">
-        ${[["lernen", "📖 Lernen"], ["aufgaben", "🃏 Aufgaben"], ["experimente", "🧪 Experimente"], ["quiz", "❓ Quiz"]]
-          .map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" class="${k === tab ? "active" : ""}" data-tab="${k}">${l}</button>`).join("")}
-      </div>
-      <div id="tab-body"></div>
-      <div class="spacer"></div>
-      <div class="row" style="justify-content:space-between">
+      <section class="step">
+        <div class="step-h"><span class="step-n">1</span><h2>Lesen</h2>
+          <div class="level-toggle" role="group" aria-label="Schwierigkeit">
+            <button data-level="basis">🌱 Basis</button><button data-level="profi">⭐ Profi</button>
+          </div></div>
+        <div class="card reading" id="reading"></div>
+      </section>
+      <section class="step">
+        <div class="step-h"><span class="step-n">2</span><h2>Merke dir</h2></div>
+        <ul class="facts">${t.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+      </section>
+      <section class="step" id="quizstep">
+        <div class="step-h"><span class="step-n">3</span><h2>Teste dich</h2></div>
+        <div class="card" id="quizbox"></div>
+      </section>
+      <section class="step">
+        <div class="step-h"><span class="step-n">4</span><h2>Vertiefen</h2><span class="chip">freiwillig</span></div>
+        <details class="more"><summary>🃏 Aufgabenkarten <span class="chip">${nDone}/${t.cards.length}</span></summary>
+          <p class="muted small">Karte antippen = Tipp auf der Rückseite. „Bearbeiten“ = Antwort notieren und Lösungsidee ansehen.</p><div class="grid grid-2" id="cardgrid"></div></details>
+        <details class="more"><summary>🧪 Experimente &amp; Modelle <span class="chip">${t.experiments.length}</span></summary>
+          <div class="grid grid-2" style="margin-top:10px">${t.experiments.map(expTile).join("")}</div></details>
+        <details class="more"><summary>✅ Das kann ich schon <span class="chip">${goals.filter(Boolean).length}/${t.goals.length}</span></summary>
+          <ul class="goals" style="margin-top:10px">${t.goals.map((g, i) => `<li><label><input type="checkbox" data-goal="${i}" ${goals[i] ? "checked" : ""}><span>${esc(g)}</span></label></li>`).join("")}</ul></details>
+      </section>
+      <div class="row" style="justify-content:space-between;margin-top:24px">
         ${prev ? `<a class="btn secondary" href="#/thema/${prev.id}">← ${esc(prev.short)}</a>` : "<span></span>"}
-        ${next ? `<a class="btn" href="#/thema/${next.id}">${esc(next.short)} →</a>` : `<a class="btn" href="#/spiel/quiz">Großes Abschlussquiz →</a>`}
+        ${next ? `<a class="btn" href="#/thema/${next.id}">Nächste Station: ${esc(next.short)} →</a>` : `<a class="btn" href="#/quiz/all">Abschlussquiz →</a>`}
       </div>`;
     setColor(app, t.color);
-    $$("[data-tab]").forEach((b) => b.addEventListener("click", () => { location.hash = `#/thema/${t.id}/${b.dataset.tab}`; }));
-    const body = $("#tab-body");
-    if (tab === "lernen") renderLearn(t, body);
-    else if (tab === "aufgaben") { body.innerHTML = `<p class="muted">Tippe auf eine Karte, um sie umzudrehen. Mit „Bearbeiten“ kannst du deine Antwort notieren.</p><div class="grid grid-2" id="cardgrid"></div>`; renderCardGrid($("#cardgrid"), t.cards.map((n) => CARDS[n - 1])); }
-    else if (tab === "experimente") {
-      body.innerHTML = `<div class="grid grid-2">${t.experiments.map(expTile).join("")}
-        <a class="card game-tile" href="#/protokoll"><span class="icon">📝</span><div><h3>Eigenes Experiment</h3><p class="small muted" style="margin:0">Planungsbogen &amp; Protokoll für deine eigene Forschungsfrage</p></div></a></div>`;
-    } else if (tab === "quiz") {
-      body.innerHTML = `<div class="card" id="quizbox"></div>`;
-      mountQuiz($("#quizbox"), QUIZ.filter((q) => q.t === t.id), t.id);
-    }
-  });
-
-  function renderLearn(t, body) {
-    const level = S.level || "basis";
-    const goals = S.goals[t.id] || [];
-    body.innerHTML = `
-      <div class="level-toggle" role="group" aria-label="Schwierigkeit">
-        <button data-level="basis" class="${level === "basis" ? "active" : ""}">🌱 Basis</button>
-        <button data-level="profi" class="${level === "profi" ? "active" : ""}">⭐ Profi</button>
-      </div>
-      <div class="card reading">${t[level].map((p) => `<p>${rich(p)}</p>`).join("")}
-        <p class="small muted" style="margin:0">Unterstrichene Wörter kannst du antippen – sie werden im Lexikon erklärt.</p>
-      </div>
-      <div class="spacer"></div>
-      <h2>Gut zu wissen</h2>
-      <ul class="facts">${t.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
-      <div class="spacer"></div>
-      <h2>Das kann ich schon</h2>
-      <p class="muted small">Hake ab, was du sicher erklären kannst. Ehrlich sein lohnt sich!</p>
-      <ul class="goals">${t.goals.map((g, i) => `<li><label><input type="checkbox" data-goal="${i}" ${goals[i] ? "checked" : ""}><span>${esc(g)}</span></label></li>`).join("")}</ul>
-      <div class="spacer"></div>
-      <div class="row">
-        <button class="btn color" id="readbtn">${S.read[t.id] ? "✓ Gelesen" : "Text gelesen ✓"}</button>
-        <a class="btn secondary" href="#/thema/${t.id}/aufgaben">Weiter zu den Aufgaben →</a>
-      </div>`;
-    $$("[data-level]", body).forEach((b) => b.addEventListener("click", () => { S.level = b.dataset.level; save(); renderLearn(t, body); }));
-    $$("[data-goal]", body).forEach((cb) => cb.addEventListener("change", () => {
+    const figs = FIGURES[t.id] || [];
+    const drawText = () => {
+      const level = S.level || "basis";
+      $$("[data-level]").forEach((b) => b.classList.toggle("active", b.dataset.level === level));
+      const paras = t[level];
+      let html = "";
+      paras.forEach((p, i) => {
+        html += `<p>${rich(p)}</p>`;
+        if (t.id === "weg" && i === 0) html += routeStrip();
+        const lim = Math.min(paras.length - 1, 99);
+        figs.forEach((f, fi) => { if (Math.min(f.after, lim) === i) html += figureHTML(f, fi); });
+      });
+      if (t.id === "weg") html += bodyMapBlock();
+      html += `<p class="small muted" style="margin:14px 0 0">Unterstrichene Wörter antippen = Erklärung aus dem Lexikon.</p>
+        <button class="btn color" id="readbtn" style="margin-top:12px">${S.read[t.id] ? "✓ Gelesen – zum Quiz" : "Gelesen ✓ – weiter zum Quiz"}</button>`;
+      $("#reading").innerHTML = html;
+      if (t.id === "weg") bindBodyMap($("#bodymap"));
+      $$(".fig").forEach((el) => el.addEventListener("click", () => {
+        const f = figs[+el.dataset.fig];
+        openSheet(`<h2 id="sheet-title">${esc(t.title)}</h2><div class="fig-big">${f.svg}</div><p class="muted">${esc(f.caption)}</p>`);
+      }));
+      $("#readbtn").addEventListener("click", (e) => {
+        S.read[t.id] = true; save(); e.target.textContent = "✓ Gelesen – zum Quiz";
+        award(20, "read:" + t.id, "Text gelesen");
+        $("#quizstep").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    $$("[data-level]").forEach((b) => b.addEventListener("click", () => { S.level = b.dataset.level; save(); drawText(); }));
+    drawText();
+    mountQuiz($("#quizbox"), QUIZ.filter((q) => q.t === t.id), t.id, 8);
+    renderCardGrid($("#cardgrid"), t.cards.map((n) => CARDS[n - 1]));
+    $$("[data-goal]").forEach((cb) => cb.addEventListener("change", () => {
       const arr = S.goals[t.id] || []; arr[+cb.dataset.goal] = cb.checked; S.goals[t.id] = arr; save();
       if (cb.checked) award(5, `goal:${t.id}:${cb.dataset.goal}`, "Lernziel"); else checkBadges();
     }));
-    $("#readbtn", body).addEventListener("click", (e) => { S.read[t.id] = true; save(); e.target.textContent = "✓ Gelesen"; award(20, "read:" + t.id, "Text gelesen"); });
-  }
+    if (tab === "quiz") setTimeout(() => $("#quizstep").scrollIntoView({ block: "start" }), 50);
+    if (tab === "aufgaben" || tab === "experimente") { const d = $$("details.more")[tab === "aufgaben" ? 0 : 1]; d.open = true; setTimeout(() => d.scrollIntoView({ block: "start" }), 50); }
+  });
 
   /* ---------- Aufgabenkarten ---------- */
   function cardFace(c) {
@@ -753,77 +773,147 @@
   });
 
   /* ---------- Quiz ---------- */
-  function mountQuiz(el, pool, key, count, onDone) {
-    let qs = shuffle(pool).slice(0, count || pool.length).map((q) => {
+  function mountQuiz(el, pool, key, count, onDone, auto) {
+    const qs = shuffle(pool).slice(0, count || pool.length).map((q) => {
+      if (q.tf) return { ...q };
       const order = shuffle(q.a.map((_, i) => i));
       return { ...q, a: order.map((i) => q.a[i]), c: order.indexOf(q.c) };
     });
-    let i = 0, score = 0, answered = false;
+    let i = 0, score = 0, combo = 0, bestCombo = 0, answered = false;
+    const wrong = [];
     const intro = () => {
-      el.innerHTML = `<h2>❓ Quiz${key === "all" ? ": Alles über die Verdauung" : ""}</h2><p class="muted">${qs.length} Fragen. Bestwert bisher: <b>${S.quiz[key] || 0} %</b></p><button class="btn color" id="qstart">Quiz starten</button>`;
+      el.innerHTML = `<div class="quiz-intro"><div><b>${qs.length} Fragen</b><p class="small muted" style="margin:0">Bestwert: ${S.quiz[key] || 0} %</p></div><button class="btn color" id="qstart">▶ Quiz starten</button></div>`;
       $("#qstart", el).addEventListener("click", step);
     };
     const step = () => {
       answered = false;
       const q = qs[i];
-      el.innerHTML = `<div class="row" style="justify-content:space-between"><span class="chip">Frage ${i + 1} / ${qs.length}</span><span class="chip">${score} Punkte</span></div>
+      el.innerHTML = `<div class="row" style="justify-content:space-between"><span class="chip">Frage ${i + 1} / ${qs.length}</span>${combo >= 2 ? `<span class="chip combo">🔥 ${combo} in Folge</span>` : ""}<span class="chip">✓ ${score}</span></div>
         <div class="progress" style="margin-top:10px"><i style="width:${(i / qs.length) * 100}%"></i></div>
-        <p class="quiz-q">${esc(q.q)}</p>
-        <div class="answers">${q.a.map((a, j) => `<button data-a="${j}">${esc(a)}</button>`).join("")}</div>
-        <div id="qfb"></div>`;
-      $$("[data-a]", el).forEach((b) => b.addEventListener("click", () => {
-        if (answered) return; answered = true;
-        const j = +b.dataset.a, ok = j === q.c;
-        if (ok) score++;
-        $$("[data-a]", el).forEach((x) => { x.disabled = true; if (+x.dataset.a === q.c) x.classList.add("right"); });
-        if (!ok) b.classList.add("wrong");
-        $("#qfb", el).innerHTML = `<div class="feedback ${ok ? "ok" : "no"}">${ok ? "✅ Richtig!" : "❌ Leider falsch."} ${esc(q.e)}</div>
-          <div class="spacer"></div><button class="btn" id="qnext">${i + 1 < qs.length ? "Weiter →" : "Ergebnis anzeigen"}</button>`;
-        $("#qnext", el).addEventListener("click", () => { i++; i < qs.length ? step() : end(); });
-        $("#qnext", el).focus();
-      }));
+        <p class="quiz-q">${q.tf ? `<span class="chip S" style="vertical-align:middle">Richtig oder falsch?</span><br>${esc(q.q.replace("Richtig oder falsch? ", ""))}` : esc(q.q)}</p>
+        <div class="answers ${q.tf ? "tf" : ""}">${q.a.map((a, j) => `<button data-a="${j}">${q.tf ? (j === 0 ? "👍 " : "👎 ") : ""}${esc(a)}</button>`).join("")}</div>
+        <div id="qfb" aria-live="polite"></div>`;
+      $$("[data-a]", el).forEach((b) => b.addEventListener("click", () => answer(+b.dataset.a)));
     };
+    const answer = (j) => {
+      if (answered) return; answered = true;
+      const q = qs[i], ok = j === q.c;
+      if (ok) { score++; combo++; bestCombo = Math.max(bestCombo, combo); if (combo === 3 || combo === 5 || combo === 10) award(combo, null, `${combo}er-Serie 🔥`); }
+      else { combo = 0; wrong.push(q); }
+      $$("[data-a]", el).forEach((x) => { x.disabled = true; if (+x.dataset.a === q.c) x.classList.add("right"); });
+      if (!ok) $(`[data-a="${j}"]`, el).classList.add("wrong");
+      const t = topicById(q.t);
+      $("#qfb", el).innerHTML = `<div class="feedback ${ok ? "ok" : "no"}">${ok ? "✅ Richtig!" : "❌ Nicht ganz."} ${esc(q.e)}${!ok && key !== q.t && t ? ` <a href="#/thema/${t.id}">Nachlesen →</a>` : ""}</div>
+        <div class="spacer"></div><button class="btn" id="qnext">${i + 1 < qs.length ? "Weiter →" : "Ergebnis"}</button>`;
+      $("#qnext", el).addEventListener("click", next);
+      $("#qnext", el).focus({ preventScroll: true });
+    };
+    const next = () => { i++; i < qs.length ? step() : end(); };
+    const keys = (e) => {
+      if (!document.body.contains(el)) return document.removeEventListener("keydown", keys);
+      if (!sheet.hidden || /INPUT|TEXTAREA/.test(document.activeElement?.tagName)) return;
+      const n = parseInt(e.key, 10);
+      if (!answered && n >= 1 && n <= (qs[i]?.a.length || 0) && $("[data-a]", el)) answer(n - 1);
+    };
+    document.addEventListener("keydown", keys);
     const end = () => {
       const pct = Math.round((score / qs.length) * 100);
       const best = Math.max(S.quiz[key] || 0, pct); S.quiz[key] = best; save();
       if (onDone) onDone(pct);
-      else { award(score * 2, null, "Quiz"); award(15, "quizdone:" + key); if (pct === 100) award(key === "all" ? 60 : 30, "quizperfect:" + key, "Perfekt!"); if (pct === 100) confetti(); }
-      const msg = pct === 100 ? "Perfekt! Du bist Verdauungs-Profi! 🏆" : pct >= 75 ? "Sehr gut! 💪" : pct >= 50 ? "Gut – schau dir die Texte nochmal an. 📖" : "Lies die Lerntexte nochmal und probier es erneut. 🌱";
-      el.innerHTML = `<h2 style="text-align:center">Ergebnis</h2><div class="big-score">${pct}%</div><p style="text-align:center">${score} von ${qs.length} richtig. ${msg}</p><p class="muted small" style="text-align:center">Bestwert: ${best} %</p>
-        <div class="row" style="justify-content:center"><button class="btn color" id="qagain">Nochmal</button></div>`;
-      $("#qagain", el).addEventListener("click", () => mountQuiz(el, pool, key, count, onDone));
+      else { award(score * 2, null, "Quiz"); award(15, "quizdone:" + key); if (pct === 100) { award(key === "all" ? 60 : 30, "quizperfect:" + key, "Perfekt!"); confetti(); } }
+      const msg = pct === 100 ? "Perfekt! 🏆" : pct >= 75 ? "Sehr gut! 💪" : pct >= 50 ? "Gut – da geht noch was. 📖" : "Lies den Text nochmal und probier es erneut. 🌱";
+      el.innerHTML = `<div class="big-score">${pct}%</div><p style="text-align:center;margin-bottom:4px"><b>${score} von ${qs.length} richtig.</b> ${msg}</p>
+        <p class="muted small" style="text-align:center">Bestwert: ${best} % · längste Serie: 🔥 ${bestCombo}</p>
+        ${wrong.length ? `<details class="box"><summary><b>Diese ${wrong.length === 1 ? "Frage" : wrong.length + " Fragen"} nochmal ansehen</b></summary><ul class="review">${wrong.map((q) => `<li><b>${esc(q.q.replace("Richtig oder falsch? ", ""))}</b><br>✅ ${esc(q.a[q.c])} – ${esc(q.e)}</li>`).join("")}</ul></details>` : ""}
+        <div class="row" style="justify-content:center;margin-top:12px"><button class="btn color" id="qagain">↻ Nochmal</button><a class="btn secondary" href="#/quiz">Mehr Quiz</a></div>`;
+      $("#qagain", el).addEventListener("click", () => { document.removeEventListener("keydown", keys); mountQuiz(el, pool, key, count, onDone, true); });
     };
-    intro();
+    auto ? step() : intro();
   }
+
+  /* ---------- Quiz-Zentrale ---------- */
+  route(/^\/quiz$/, () => {
+    app.innerHTML = `<h1>❓ Quiz</h1><p class="muted">Durchklicken, Punkte sammeln, Serien knacken. Tipp: Am Computer kannst du mit den Tasten 1–4 antworten.</p>
+      <div class="quizgrid">
+        <a class="qtile" href="#/quiz/schnell" style="--c:#3d8bbd"><span class="qi">⚡</span><b>Schnell-Quiz</b><span>10 gemischte Fragen</span></a>
+        <a class="qtile" href="#/blitz" style="--c:#e07a5f"><span class="qi">⏱️</span><b>Blitzrunde</b><span>60 Sek. Richtig oder falsch${S.games.blitz ? ` · Rekord ${S.games.blitz}` : ""}</span></a>
+        <a class="qtile" href="#/challenge" style="--c:#9a7cc0"><span class="qi">📅</span><b>Tages-Challenge</b><span>5 Fragen, jeden Tag neu</span></a>
+        <a class="qtile" href="#/quiz/all" style="--c:#2b2733"><span class="qi">🎓</span><b>Abschlussquiz</b><span>20 Fragen · Bestwert ${S.quiz.all || 0} %</span></a>
+      </div>
+      <h2>Quiz pro Station</h2>
+      <div class="stations">${TOPICS.map((t, i) => `<a class="station" href="#/quiz/${t.id}" style="--c:${t.color}"><span class="s-num">${(S.quiz[t.id] || 0) === 100 ? "✓" : i + 1}</span><span class="s-icon">${t.icon}</span><span class="s-main"><b>${esc(t.title)}</b><span class="progress"><i style="width:${S.quiz[t.id] || 0}%"></i></span></span><span class="s-pct">${S.quiz[t.id] || 0}%</span></a>`).join("")}</div>
+      <div class="spacer"></div>
+      <h2>Spiele</h2>
+      <div class="grid grid-2">${GAMES.map((g) => `<a class="card game-tile" href="${g.exp ? `#/experiment/${g.id}` : `#/spiel/${g.id}`}"><span class="icon" aria-hidden="true">${g.icon}</span><div><h3>${esc(g.title)}</h3><p class="small muted" style="margin:0">${esc(g.desc)}</p></div></a>`).join("")}</div>
+      ${footer}`;
+  });
+  route(/^\/spiele$/, () => { location.replace("#/quiz"); });
+  route(/^\/quiz\/([a-z]+)$/, (key) => {
+    const t = topicById(key);
+    const cfg = key === "schnell" ? ["⚡ Schnell-Quiz", QUIZ, 10] : key === "all" ? ["🎓 Abschlussquiz", QUIZ, 20] : t ? [`${t.icon} Quiz: ${t.title}`, QUIZ.filter((q) => q.t === t.id), 10] : null;
+    if (!cfg) return home();
+    app.innerHTML = `<a class="back" href="#/quiz">← Quiz</a><h1>${esc(cfg[0])}</h1><div class="card" id="qb"></div>`;
+    if (t) setColor(app, t.color);
+    mountQuiz($("#qb"), cfg[1], key, cfg[2], null, true);
+  });
+
+  /* ---------- Blitzrunde ---------- */
+  route(/^\/blitz$/, () => {
+    app.innerHTML = `<a class="back" href="#/quiz">← Quiz</a><h1>⏱️ Blitzrunde</h1><div class="card blitz" id="bz"></div>`;
+    const el = $("#bz");
+    const start = () => {
+      let pool = shuffle(TF), k = 0, score = 0, wrongN = 0, left = 60, lock = false;
+      const tick = setInterval(() => {
+        if (!document.body.contains(el)) return clearInterval(tick);
+        left--; const tl = $("#bztime", el); if (tl) tl.textContent = left;
+        const bar = $("#bzbar", el); if (bar) bar.style.width = (left / 60) * 100 + "%";
+        if (left <= 0) { clearInterval(tick); finish(); }
+      }, 1000);
+      const show = (flash) => {
+        if (k >= pool.length) { pool = shuffle(TF); k = 0; }
+        const q = pool[k];
+        el.innerHTML = `<div class="row" style="justify-content:space-between"><span class="chip">⏱️ <b id="bztime">${left}</b> s</span><span class="chip done">✓ ${score}</span></div>
+          <div class="progress" style="margin-top:10px"><i id="bzbar" style="width:${(left / 60) * 100}%;transition:width 1s linear"></i></div>
+          <p class="blitz-q">${esc(q.s)}</p>
+          <div class="tfbig"><button data-r="1" class="yes">👍 Richtig</button><button data-r="0" class="no">👎 Falsch</button></div>
+          <div class="blitz-fb ${flash ? flash.cls : ""}">${flash ? flash.txt : "&nbsp;"}</div>`;
+        $$("[data-r]", el).forEach((b) => b.addEventListener("click", () => {
+          if (lock || left <= 0) return; lock = true;
+          const ok = (b.dataset.r === "1") === q.r;
+          if (ok) score++; else wrongN++;
+          k++;
+          setTimeout(() => { lock = false; if (left > 0) show({ cls: ok ? "ok" : "no", txt: ok ? "✅ Richtig!" : `❌ ${esc(q.e)}` }); }, ok ? 150 : 650);
+        }));
+      };
+      const finish = () => {
+        const rec = Math.max(S.games.blitz || 0, score); const isRec = score > (S.games.blitz || 0) && score > 0;
+        S.games.blitz = rec; save();
+        award(score, null, "Blitzrunde"); if (isRec) confetti();
+        el.innerHTML = `<div class="big-score">${score}</div><p style="text-align:center"><b>richtige Antworten</b> in 60 Sekunden (${wrongN} falsch).<br>${isRec ? "🎉 Neuer Rekord!" : `Rekord: ${rec}`}</p><div class="row" style="justify-content:center"><button class="btn color" id="bzagain">↻ Nochmal</button><a class="btn secondary" href="#/quiz">Mehr Quiz</a></div>`;
+        $("#bzagain", el).addEventListener("click", start);
+      };
+      show();
+    };
+    el.innerHTML = `<p style="font-size:1.1rem">Du hast <b>60 Sekunden</b>. Entscheide so schnell du kannst: Stimmt die Aussage – oder nicht?</p><p class="muted">Rekord: <b>${S.games.blitz || 0}</b> richtige Antworten</p><button class="btn color" id="bzgo">▶ Los!</button>`;
+    $("#bzgo", el).addEventListener("click", start);
+  });
 
   /* ---------- Üben / Spiele ---------- */
   const GAMES = [
     { id: "reihenfolge", icon: "🧭", title: "Weg der Nahrung", desc: "Bring die Stationen in die richtige Reihenfolge." },
     { id: "beschriften", icon: "🏷️", title: "Organe beschriften", desc: "Erkennst du jedes Verdauungsorgan im Körper?" },
     { id: "silben", icon: "🧩", title: "Silbenrätsel", desc: "Setze die Namen der Organe aus Silben zusammen." },
-    { id: "quiz", icon: "🏆", title: "Großes Quiz", desc: "15 gemischte Fragen aus allen Stationen." },
     { id: "A13", icon: "🍩", title: "Hunger oder Appetit?", desc: "Vier Geschichten – warum essen die Personen?", exp: true },
     { id: "A12", icon: "🥦", title: "Ballaststoff-Detektiv", desc: "Finde die ballaststoffreichen Lebensmittel.", exp: true },
     { id: "A14", icon: "👀", title: "Wie gut kannst du schätzen?", desc: "Optische Täuschungen rund ums Essen.", exp: true },
     { id: "A6", icon: "😮", title: "Schluck-Modell", desc: "Warum kann man beim Schlucken nicht atmen?", exp: true }
   ];
-  route(/^\/spiele$/, () => {
-    app.innerHTML = `<h1>Üben &amp; Spielen</h1><p class="muted">Teste, was du gelernt hast – so oft du willst.</p>
-      <div class="grid grid-2">${GAMES.map((g) => {
-        const best = g.exp ? S.games[{ A13: "hunger", A12: "ballast" }[g.id]] : g.id === "quiz" ? S.quiz.all : S.games[g.id];
-        return `<a class="card game-tile" href="${g.exp ? `#/experiment/${g.id}` : `#/spiel/${g.id}`}"><span class="icon" aria-hidden="true">${g.icon}</span><div><h3>${esc(g.title)}</h3><p class="small muted" style="margin:0">${esc(g.desc)}</p>${best !== undefined ? `<p class="small" style="margin:.4em 0 0;font-weight:800">Bestwert: ${best} %</p>` : ""}</div></a>`;
-      }).join("")}</div>
-      <div class="spacer"></div><h2>Quiz nach Stationen</h2>
-      <div class="grid grid-3">${TOPICS.map((t) => `<a class="card game-tile" href="#/thema/${t.id}/quiz"><span class="icon">${t.icon}</span><div><h3>${esc(t.short)}</h3><p class="small muted" style="margin:0">Bestwert: ${S.quiz[t.id] || 0} %</p></div></a>`).join("")}</div>
-      ${footer}`;
-  });
-
   route(/^\/spiel\/([a-z]+)$/, (id) => {
     const g = GAMES.find((x) => x.id === id);
     if (!g) return home();
-    app.innerHTML = `<a class="back" href="#/spiele">← Üben</a><h1>${g.icon} ${esc(g.title)}</h1><p class="muted">${esc(g.desc)}</p><div class="card" id="game"></div>`;
+    app.innerHTML = `<a class="back" href="#/quiz">← Quiz</a><h1>${g.icon} ${esc(g.title)}</h1><p class="muted">${esc(g.desc)}</p><div class="card" id="game"></div>`;
     const el = $("#game");
-    ({ reihenfolge: gameOrder, beschriften: gameLabel, silben: gameSyllables, quiz: (e) => mountQuiz(e, QUIZ, "all", 15) })[id](el);
+    ({ reihenfolge: gameOrder, beschriften: gameLabel, silben: gameSyllables })[id](el);
   });
 
   function gameOrder(el) {

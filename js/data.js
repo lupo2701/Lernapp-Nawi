@@ -552,3 +552,48 @@ const LEXIKON = {
   "Verdauungsenzym": "Enzym, das Nährstoffe in kleinere Bausteine zerlegt. Nur diese können vom Dünndarm ins Blut oder in die Lymphe aufgenommen werden.",
   "Zweifachzucker": "Kohlenhydrate aus zwei Einfachzuckern (Disaccharide). Beispiele: Haushaltszucker (Saccharose), Milchzucker (Laktose), Malzzucker (Maltose)."
 };
+
+/* Richtig-oder-falsch-Fragen (für Blitzrunde und Stations-Quiz). r = true, wenn die Aussage stimmt. */
+const TF = [
+  { t: "weg", s: "Die Nahrung wandert vom Magen direkt in den Dickdarm.", r: false, e: "Dazwischen liegt der Dünndarm." },
+  { t: "weg", s: "Leber und Bauchspeicheldrüse gehören zum Verdauungssystem.", r: true, e: "Sie liefern Gallensaft und Bauchspeichel in den Dünndarm." },
+  { t: "weg", s: "Die Nahrung fließt auch durch die Leber hindurch.", r: false, e: "Die Leber liegt nicht auf dem Weg – sie gibt nur Gallensaft ab." },
+  { t: "weg", s: "Bei der parenteralen Ernährung kommt die Nahrung direkt in den Magen.", r: false, e: "Parenteral = direkt in die Vene. In den Magen = enteral." },
+  { t: "weg", s: "Bewegung nach dem Essen kann die Verdauung anregen.", r: true, e: "Bewegung bringt den Darm in Schwung." },
+  { t: "mund", s: "Die Verdauung beginnt erst im Magen.", r: false, e: "Sie beginnt schon im Mund – mit Kauen und der Amylase." },
+  { t: "mund", s: "Speichel macht den Bissen gleitfähig.", r: true, e: "So rutscht er leichter durch die Speiseröhre." },
+  { t: "mund", s: "Der Kehldeckel verschließt beim Schlucken die Speiseröhre.", r: false, e: "Er verschließt die Luftröhre." },
+  { t: "mund", s: "Scharf ist eine Geschmacksrichtung wie süß oder salzig.", r: false, e: "Schärfe ist ein Hitze- und Schmerzreiz." },
+  { t: "mund", s: "Ohne Nase schmecken viele Lebensmittel fast gleich.", r: true, e: "Die meisten Aromen nehmen wir über die Nase wahr." },
+  { t: "mund", s: "Amylase spaltet Stärke.", r: true, e: "In Malzzucker – deshalb schmeckt Brot beim Kauen süß." },
+  { t: "magen", s: "Der Magensaft ist stark sauer.", r: true, e: "Er enthält Salzsäure." },
+  { t: "magen", s: "Pepsin spaltet Fette.", r: false, e: "Pepsin spaltet Proteine (Eiweiße)." },
+  { t: "magen", s: "Die Magensäure tötet Bakterien ab.", r: true, e: "So schützt sie uns vor Krankheiten." },
+  { t: "magen", s: "Der Magenpförtner gibt den Speisebrei portionsweise weiter.", r: true, e: "Er ist ein Schließmuskel am Magenausgang." },
+  { t: "magen", s: "Fettiges Essen verlässt den Magen besonders schnell.", r: false, e: "Fettreiche Speisen bleiben am längsten im Magen." },
+  { t: "magen", s: "Stress kann auf den Magen schlagen.", r: true, e: "Gehirn und Verdauung sind über Nerven verbunden." },
+  { t: "duenndarm", s: "Im Dünndarm werden die Nährstoffe ins Blut aufgenommen.", r: true, e: "Das nennt man Resorption." },
+  { t: "duenndarm", s: "Der Dünndarm ist kürzer als ein Meter.", r: false, e: "Er ist mindestens drei Meter lang." },
+  { t: "duenndarm", s: "Darmzotten vergrößern die Oberfläche des Dünndarms.", r: true, e: "Wie die Schlaufen eines Frotteetuchs." },
+  { t: "duenndarm", s: "Der Zwölffingerdarm ist der erste Abschnitt des Dünndarms.", r: true, e: "Danach folgen Leerdarm und Krummdarm." },
+  { t: "duenndarm", s: "Fette werden in Aminosäuren zerlegt.", r: false, e: "Fette → Fettsäuren und Glycerin. Proteine → Aminosäuren." },
+  { t: "galle", s: "Die Gallenblase stellt den Gallensaft her.", r: false, e: "Die Leber stellt ihn her, die Gallenblase speichert ihn." },
+  { t: "galle", s: "Gallensaft wirkt ähnlich wie Spülmittel.", r: true, e: "Beide emulgieren Fett." },
+  { t: "galle", s: "Insulin wird in den Dünndarm abgegeben.", r: false, e: "Insulin gelangt direkt ins Blut." },
+  { t: "galle", s: "Der Bauchspeichel neutralisiert den sauren Speisebrei.", r: true, e: "Er gleicht die Magensäure aus." },
+  { t: "galle", s: "Senf regt die Bildung von Gallensaft an.", r: true, e: "Scharfe Gewürze fördern Speichel und Galle." },
+  { t: "dickdarm", s: "Im Dickdarm wird dem Speisebrei Wasser entzogen.", r: true, e: "So entsteht fester Kot." },
+  { t: "dickdarm", s: "Bakterien im Darm sind immer schädlich.", r: false, e: "Die Darmflora ist nützlich und schützt vor Krankheitserregern." },
+  { t: "dickdarm", s: "Fleisch enthält viele Ballaststoffe.", r: false, e: "Ballaststoffe gibt es nur in pflanzlichen Lebensmitteln." },
+  { t: "dickdarm", s: "Bei Verstopfung hilft es, viel zu trinken.", r: true, e: "Ballaststoffe brauchen Flüssigkeit zum Aufquellen." },
+  { t: "dickdarm", s: "Der Wurmfortsatz hängt am Blinddarm.", r: true, e: "Er wird bei einer Blinddarm-OP entfernt." },
+  { t: "dickdarm", s: "Apfelsaft enthält genauso viele Ballaststoffe wie ein Apfel.", r: false, e: "Im Saft fehlen die Ballaststoffe fast ganz." },
+  { t: "hunger", s: "Hunger und Appetit sind dasselbe.", r: false, e: "Hunger ist ein Körpersignal, Appetit die Lust auf etwas Bestimmtes." },
+  { t: "hunger", s: "Das Sattgefühl kommt sofort beim ersten Bissen.", r: false, e: "Erst nach etwa 15–20 Minuten." },
+  { t: "hunger", s: "Wer langsam isst, merkt besser, wann er satt ist.", r: true, e: "Die Sättigungssignale haben dann Zeit, im Gehirn anzukommen." },
+  { t: "hunger", s: "Werbung kann Appetit auslösen.", r: true, e: "Sie ist ein äußerer Reiz." },
+  { t: "hunger", s: "Auf einem großen Teller wirkt eine Portion größer.", r: false, e: "Sie wirkt kleiner – deshalb nimmt man sich oft mehr." },
+  { t: "hunger", s: "Ballaststoffe dehnen den Magen und machen satt.", r: true, e: "Sie quellen im Magen auf." }
+];
+/* Richtig/Falsch-Fragen ins normale Quiz übernehmen */
+TF.forEach((x) => QUIZ.push({ t: x.t, q: "Richtig oder falsch? " + x.s, a: ["Richtig", "Falsch"], c: x.r ? 0 : 1, e: x.e, tf: true }));
